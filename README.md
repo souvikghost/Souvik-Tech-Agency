@@ -4,7 +4,7 @@ REST API for a role-based company management portal. Built with Node.js, Express
 
 ## Live API
 
-> https://your-render-url.onrender.com
+> will update later
 
 ---
 
@@ -156,9 +156,9 @@ bcrypt.hash('yourpassword', 10).then(console.log);
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@souviktechagency.com | Admin@1234 |
-| Employee | employee@souviktechagency.com | Employee@123 |
-| Client | client@souviktechagency.com | Client@123 |
+| Admin | admin@souviktechagency.com | ---- |
+| Employee | employee@souviktechagency.com | ---- |
+| Client | client@souviktechagency.com | ---- |
 
 ---
 
