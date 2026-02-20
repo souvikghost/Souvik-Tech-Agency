@@ -1,0 +1,32 @@
+const dotenv = require("dotenv");
+dotenv.config({ quiet: true });
+const express = require("express");
+const { connectDb } = require("./config/db");
+
+const cookieParser = require("cookie-parser");
+
+const cors = require("cors");
+
+const app = express();
+
+app.set("trust proxy", true);
+
+app.use(cors({
+  origin: ["http://localhost:3000", "https://localhost:3000"],
+  methods: ["GET", "POST", "DELETE", "PATCH"],
+  credentials: true,
+}));
+app.use(express.json());
+app.use(cookieParser());
+
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/projects', require('./routes/projectRoutes'));
+app.use('/api/services', require('./routes/serviceRoutes'));
+app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+
+
+app.get('/', (req, res) => res.json({ message: 'Souvik Tech Agency API' }));
+
+
+module.exports = { app, connectDb };
