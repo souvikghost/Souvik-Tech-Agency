@@ -5,14 +5,14 @@ const sendTokenCookie = (res, user) => {
   const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "1d" });
 
   res.cookie("token", token, {
-    // httpOnly: true,
-    // secure: process.env.NODE_ENV === 'production',
-    // sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    // maxAge: 24 * 60 * 60 * 1000, // 1 day
     httpOnly: true,
-    secure: false, // MUST be false because HTTP
-    sameSite: "lax", // change from none
-    maxAge: 24 * 60 * 60 * 1000,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+    // httpOnly: true,
+    // secure: false, // MUST be false because HTTP
+    // sameSite: "lax", // change from none
+    // maxAge: 24 * 60 * 60 * 1000,
   });
 
   return token;
@@ -44,11 +44,12 @@ const login = async (req, res) => {
 
 // POST /api/auth/logout
 const logout = (req, res) => {
-   res.clearCookie("token", {
-    httpOnly: true,
-    secure: false,
-    sameSite: "lax",
-  });
+  //  res.clearCookie("token", {
+  //   httpOnly: true,
+  //   secure: false,
+  //   sameSite: "lax",
+  // });
+  res.clearCookie("token", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "lax" });
   res.status(200).json({ message: "Logged out successfully" });
 };
 

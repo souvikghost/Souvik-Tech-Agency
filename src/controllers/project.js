@@ -67,7 +67,7 @@ const assignEmployees = async (req, res) => {
 const updateStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const allowed = ['pending', 'in-progress', 'completed'];
+    const allowed = ['pending', 'in-progress', 'completed', 'stopped'];
     if (!allowed.includes(status))
       return res.status(400).json({ message: 'Invalid status' });
 
