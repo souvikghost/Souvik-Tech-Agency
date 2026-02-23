@@ -24,7 +24,7 @@ const getRequests = async (req, res) => {
   try {
     const filter = req.user.role === 'client' ? { client: req.user._id } : {};
     const requests = await ServiceRequest.find(filter)
-      .populate('client', 'name email')
+      .populate({ path: 'client', select: 'name email isDeleted' })
       .populate('service', 'name');
     res.status(200).json(requests);
   } catch (err) {
@@ -43,7 +43,6 @@ const approveRequest = async (req, res) => {
     request.status = 'approved';
     await request.save();
 
-    // Auto-create project on approval
     const project = await Project.create({
       name: request.service.name,
       description: `Project created from service request`,

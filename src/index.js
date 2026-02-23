@@ -24,6 +24,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
 app.use('/api/services', require('./routes/serviceRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/messages', require('./routes/messageRoutes'));
 
 
 app.get('/', (req, res) => res.json({ message: 'Souvik Tech Agency API' }));

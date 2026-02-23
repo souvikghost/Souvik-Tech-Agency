@@ -3,10 +3,12 @@ const Service = require('../models/serviceModel');
 // POST /api/services  — admin creates a service
 const createService = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, price } = req.body;
     if (!name) return res.status(400).json({ message: 'Service name required' });
+    if (!price || isNaN(price) || price < 0)
+      return res.status(400).json({ message: 'Valid price required' });
 
-    const service = await Service.create({ name, description });
+    const service = await Service.create({ name, description, price });
     res.status(201).json({ message: 'Service created', service });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
