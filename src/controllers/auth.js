@@ -24,6 +24,9 @@ const login = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
+    // Block soft-deleted users from logging in
+    if (user.isDeleted) return res.status(401).json({ message: "Invalid credentials" });
+
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
@@ -31,7 +34,7 @@ const login = async (req, res) => {
 
     res.status(200).json({
       message: "Login successful",
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, avatar:user.avatar },
     });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
