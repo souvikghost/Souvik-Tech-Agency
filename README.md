@@ -1,107 +1,138 @@
 # Souvik Tech Agency — Backend API
 
-REST API for a role-based company management portal. Built with Node.js, Express, and MongoDB.
+> REST API for a role-based software company management portal. Built with Node.js, Express, and MongoDB. Deployed on AWS EC2 with PM2 for 24/7 uptime.
 
-## Live API
+🔗 **Live Demo:** [https://souviktechagency.vercel.app](https://souviktechagency.vercel.app)  
+🔗 **Frontend Repo:** [https://github.com/souvikghost/Souvik-Tech-Agency-Frontend](https://github.com/souvikghost/Souvik-Tech-Agency-Frontend)
 
-> will update later
+---
+
+## Table of Contents
+
+- [Tech Stack](#tech-stack)
+- [Features](#features)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [API Reference](#api-reference)
+- [Deployment](#deployment)
+- [Test Credentials](#test-credentials)
 
 ---
 
 ## Tech Stack
 
-- **Node.js** + **Express.js**
-- **MongoDB** + **Mongoose**
-- **JWT** authentication via httpOnly Cookie
-- **bcrypt** for password hashing
+| Layer | Technology |
+|-------|------------|
+| Runtime | Node.js |
+| Framework | Express.js |
+| Database | MongoDB + Mongoose |
+| Authentication | JWT via httpOnly Cookie |
+| Password Hashing | bcrypt |
+| File Upload | Multer (memory storage) + Cloudinary |
+| Process Manager | PM2 (production) |
+| Hosting | AWS EC2 |
+
+---
+
+## Features
+
+- Role-based access control — Admin, Employee, Client
+- JWT authentication via secure httpOnly cookies with cross-origin support
+- Soft delete for users — records preserved with `isDeleted` flag, excluded from active queries
+- Service request flow — Client requests → Admin approves → Project auto-created
+- Employee assignment to projects (admin only, employees cannot unassign themselves)
+- Messaging system between all roles with conversation and thread management
+- Avatar upload via Cloudinary with automatic face-crop transformation (200×200)
+- Dashboard stats endpoint for admin overview
+- CORS configured for cross-origin cookie support between Vercel frontend and EC2 backend
+
+---
+
+## Getting Started
+
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/souvikghost/Souvik-Tech-Agency
+cd Souvik-Tech-Agency
+
+# Install dependencies
+npm install
+```
+
+### Environment Variables
+
+Create a `.env` file in the root:
+
+```env
+PORT=9797
+MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/souvik-tech-agency
+JWT_SECRET=your_secret_key
+JWT_EXPIRES_IN=1d
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+
+> For production set `NODE_ENV=production` — this automatically enables `secure: true` and `sameSite: None` on the auth cookie for cross-origin support.
+
+### Run Locally
+
+```bash
+# Development with auto-reload
+npm run dev
+
+# Production
+npm start
+```
+
+Server starts at `http://localhost:9797`
+
+---
+
+## Admin Seeding
+
+There is no self-registration. The admin account is seeded manually. The admin for the live demo has already been seeded manually and is ready to use with the credentials below.
 
 ---
 
 ## Project Structure
 
 ```
-src/
 ├── config/
-│   └── db.js
+│   ├── db.js                        # MongoDB connection setup
+│   ├── cloudinary.js                # Cloudinary SDK configuration
+│   └── multer.js                    # Multer memory storage + file filter
 ├── controllers/
-│   ├── auth.js
-│   ├── user.js
-│   ├── service.js
-│   ├── serviceRequest.js
-│   ├── project.js
-│   └── dashboard.js
+│   ├── auth.controller.js           # login, logout, getMe
+│   ├── user.controller.js           # createUser, getUsers, soft deleteUser, updateProfile
+│   ├── service.controller.js        # createService, getServices, deleteService
+│   ├── serviceRequest.controller.js # createRequest, getRequests, approveRequest, rejectRequest
+│   ├── project.controller.js        # getProjects, assignEmployees, updateStatus, deleteProject
+│   ├── message.controller.js        # getConversations, getContacts, getThread, sendMessage, deleteConversation
+│   └── dashboard.controller.js      # getDashboardStats
 ├── middleware/
-│   ├── protect.js
-│   └── allowRoles.js
+│   ├── protect.js                   # JWT verification — attaches req.user
+│   └── allowRoles.js                # Role-based access guard
 ├── models/
-│   ├── userModel.js
-│   ├── projectModel.js
-│   ├── serviceModel.js
-│   ├── serviceRequestModel.js
-│   └── messageModel.js
+│   ├── userModel.js                 # User schema with bcrypt hook + isDeleted soft delete
+│   ├── projectModel.js              # Project schema
+│   ├── serviceModel.js              # Service schema with price field
+│   ├── serviceRequest.js            # Service request schema
+│   └── messageModel.js              # Message schema with read status
 ├── routes/
 │   ├── authRoutes.js
 │   ├── userRoutes.js
 │   ├── serviceRoutes.js
 │   ├── projectRoutes.js
-│   └── dashboardRoutes.js
-├── index.js
-└── server.js
-```
-
----
-
-## Local Setup
-
-### 1. Clone and install
-
-```bash
-git clone https://github.com/yourusername/souvik-tech-agency-backend.git
-cd souvik-tech-agency-backend
-npm install
-```
-
-### 2. Environment variables
-
-Create a `.env` file in the root:
-
-```env
-PORT=5000
-MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/souvik-tech-agency
-JWT_SECRET=your_secret_key
-JWT_EXPIRES_IN=1d
-NODE_ENV=development
-CLIENT_URL=http://localhost:3000
-```
-
-### 3. Run
-
-```bash
-npm run dev
-```
-
-Server starts at `http://localhost:5000`
-
----
-
-## Admin Setup
-
-No self-registration. Admin is created manually in MongoDB.
-
-**Step 1** — Hash your password:
-```js
-const bcrypt = require('bcrypt');
-bcrypt.hash('yourpassword', 10).then(console.log);
-```
-
-**Step 2** — Insert into MongoDB:
-```json
-{
-  "name": "Souvik Admin",
-  "email": "admin@souviktechagency.com",
-  "password": "<bcrypt_hash>",
-  "role": "admin"
-}
+│   ├── dashboardRoutes.js
+│   └── messageRoutes.js
+├── app.js                           # Express app — CORS, middleware, route registration
+└── server.js                        # Entry point — DB connect + server listen
 ```
 
 ---
@@ -109,46 +140,67 @@ bcrypt.hash('yourpassword', 10).then(console.log);
 ## API Reference
 
 ### Auth
-| Method | Endpoint | Access |
-|--------|----------|--------|
-| POST | `/api/auth/login` | Public |
-| POST | `/api/auth/logout` | Any |
-| GET | `/api/auth/me` | Any |
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| POST | `/api/auth/login` | Public | Login with email + password, sets httpOnly cookie |
+| POST | `/api/auth/logout` | Any | Clears auth cookie |
+| GET | `/api/auth/me` | Any | Returns current logged-in user |
 
 ### Users
-| Method | Endpoint | Access |
-|--------|----------|--------|
-| POST | `/api/users` | Admin |
-| GET | `/api/users?role=` | Admin |
-| GET | `/api/users/:id` | Admin |
-| DELETE | `/api/users/:id` | Admin |
-| PATCH | `/api/users/profile` | Any |
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| POST | `/api/users` | Admin | Create employee or client |
+| GET | `/api/users` | Admin | Get all active users — filter by `?role=employee\|client` |
+| GET | `/api/users?deleted=true` | Admin | Get soft-deleted users |
+| GET | `/api/users/:id` | Admin | Get single user by ID |
+| DELETE | `/api/users/:id` | Admin | Soft delete — sets `isDeleted: true` |
+| PATCH | `/api/users/profile` | Any | Update own name and/or avatar (multipart/form-data) |
 
 ### Services
-| Method | Endpoint | Access |
-|--------|----------|--------|
-| POST | `/api/services` | Admin |
-| GET | `/api/services` | Any |
-| DELETE | `/api/services/:id` | Admin |
-| POST | `/api/services/requests` | Client |
-| GET | `/api/services/requests` | Admin, Client |
-| PATCH | `/api/services/requests/:id/approve` | Admin |
-| PATCH | `/api/services/requests/:id/reject` | Admin |
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| POST | `/api/services` | Admin | Create a service with name, description, price |
+| GET | `/api/services` | Any | Get all available services |
+| DELETE | `/api/services/:id` | Admin | Delete a service |
+
+### Service Requests
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| POST | `/api/services/requests` | Client | Submit a service request with optional note |
+| GET | `/api/services/requests` | Admin, Client | Get requests — client sees own only |
+| PATCH | `/api/services/requests/:id/approve` | Admin | Approve request — auto-creates a project |
+| PATCH | `/api/services/requests/:id/reject` | Admin | Reject request |
 
 ### Projects
-| Method | Endpoint | Access |
-|--------|----------|--------|
-| GET | `/api/projects` | All (filtered by role) |
-| GET | `/api/projects/:id` | All (own only) |
-| PATCH | `/api/projects/:id` | Admin |
-| PATCH | `/api/projects/:id/assign` | Admin |
-| PATCH | `/api/projects/:id/status` | Admin, Employee |
-| DELETE | `/api/projects/:id` | Admin |
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| GET | `/api/projects` | All | Get projects — filtered by role automatically |
+| GET | `/api/projects/:id` | All | Get single project — own only |
+| PATCH | `/api/projects/:id` | Admin | Update project name or description |
+| PATCH | `/api/projects/:id/assign` | Admin | Assign or unassign employees |
+| PATCH | `/api/projects/:id/status` | Admin, Employee | Update project status |
+| DELETE | `/api/projects/:id` | Admin | Delete project |
+
+### Messages
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| GET | `/api/messages/conversations` | Any | Get all conversations with last message + unread count |
+| GET | `/api/messages/contacts` | Any | Get contactable users based on role |
+| GET | `/api/messages/:userId` | Any | Get full thread — marks messages as read |
+| POST | `/api/messages` | Any | Send a message |
+| DELETE | `/api/messages/:messageId` | Any | Delete own message |
+| DELETE | `/api/messages/conversation/:userId` | Any | Delete entire conversation |
 
 ### Dashboard
-| Method | Endpoint | Access |
-|--------|----------|--------|
-| GET | `/api/dashboard` | Admin |
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| GET | `/api/dashboard` | Admin | Get total counts — users, services, requests, projects |
+
+---
+
+## Deployment
+
+The backend is deployed on **AWS EC2** and managed with **PM2** for process management, ensuring the server runs continuously 24/7 and automatically restarts on crashes or reboots.
 
 ---
 
@@ -156,12 +208,8 @@ bcrypt.hash('yourpassword', 10).then(console.log);
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@souviktechagency.com | ---- |
-| Employee | employee@souviktechagency.com | ---- |
-| Client | client@souviktechagency.com | ---- |
+| Admin | admin@souviktechagency.com | abcd |
+| Employee | jake@souviktechagency.com | abcd |
+| Client | dana@souviktechagency.com | abcd |
 
 ---
-
-## Author
-
-**Souvik Ghosh** — Assessment for Manaagenda Pvt. Ltd.
