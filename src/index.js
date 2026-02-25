@@ -8,11 +8,10 @@ const app = express();
 
 app.set("trust proxy", true);
 
-const allowedOrigins = ["http://localhost:5173", "http://localhost:3000", "https://souviktechagency.vercel.app"];
+const allowedOrigins = ["https://souviktechagency.vercel.app"];
 
 app.use(
   cors({
-    // origin: ["http://localhost:3000", "https://localhost:3000"],
 
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);

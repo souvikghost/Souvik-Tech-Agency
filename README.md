@@ -45,6 +45,8 @@
 - Avatar upload via Cloudinary with automatic face-crop transformation (200×200)
 - Dashboard stats endpoint for admin overview
 - CORS configured for cross-origin cookie support between Vercel frontend and EC2 backend
+- Payment management — admin can add, edit, delete payment records per project (amount, method, status, date, notes)
+- Soft-deleted users blocked from login — returns invalid credentials instead of allowing access
 
 ---
 
@@ -114,6 +116,7 @@ There is no self-registration. The admin account is seeded manually. The admin f
 │   ├── serviceRequest.controller.js # createRequest, getRequests, approveRequest, rejectRequest
 │   ├── project.controller.js        # getProjects, assignEmployees, updateStatus, deleteProject
 │   ├── message.controller.js        # getConversations, getContacts, getThread, sendMessage, deleteConversation
+│   ├── payment.controller.js        # createPayment, getPayments, getPaymentByProject, updatePayment, deletePayment, getPaymentStats
 │   └── dashboard.controller.js      # getDashboardStats
 ├── middleware/
 │   ├── protect.js                   # JWT verification — attaches req.user
@@ -123,14 +126,16 @@ There is no self-registration. The admin account is seeded manually. The admin f
 │   ├── projectModel.js              # Project schema
 │   ├── serviceModel.js              # Service schema with price field
 │   ├── serviceRequest.js            # Service request schema
-│   └── messageModel.js              # Message schema with read status
+│   ├── messageModel.js              # Message schema with read status
+│   └── paymentModel.js              # Payment schema linked to project and client
 ├── routes/
 │   ├── authRoutes.js
 │   ├── userRoutes.js
 │   ├── serviceRoutes.js
 │   ├── projectRoutes.js
 │   ├── dashboardRoutes.js
-│   └── messageRoutes.js
+│   ├── messageRoutes.js
+│   └── payment.routes.js
 ├── app.js                           # Express app — CORS, middleware, route registration
 └── server.js                        # Entry point — DB connect + server listen
 ```
@@ -195,6 +200,16 @@ There is no self-registration. The admin account is seeded manually. The admin f
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
 | GET | `/api/dashboard` | Admin | Get total counts — users, services, requests, projects |
+
+### Payments
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| POST | `/api/payments` | Admin | Create payment record for a project |
+| GET | `/api/payments` | Admin, Client | Get all payments — client sees own only |
+| GET | `/api/payments/stats` | Admin | Get total revenue, pending, partial amounts |
+| GET | `/api/payments/project/:projectId` | Admin, Client | Get payment for a specific project |
+| PATCH | `/api/payments/:id` | Admin | Update payment record |
+| DELETE | `/api/payments/:id` | Admin | Delete payment record |
 
 ---
 
