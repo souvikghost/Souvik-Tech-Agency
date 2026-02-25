@@ -17,49 +17,81 @@ const sendTokenCookie = (res, user) => {
   return token;
 };
 
+// --- get real IP (Cloudflare aware) ---
 const getIP = (req) => {
   return req.headers["cf-connecting-ip"] || req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip || "unknown";
 };
 
-// --- helper: fetch geo info from ipapi ---
+// --- fetch geo info from freeipapi ---
 const getGeoInfo = async (ip) => {
   try {
-    // skip for localhost
     if (ip === "::1" || ip === "127.0.0.1" || ip === "unknown") {
-      return { country: "localhost", countryCode: "LH", city: "localhost", region: "localhost", timezone: "localhost", org: "localhost", postal: "unknown", latitude: null, longitude: null };
+      return {
+        ipSource: "localhost",
+        country: "localhost",
+        countryCode: "LH",
+        city: "localhost",
+        region: "localhost",
+        regionCode: "LH",
+        timezone: "localhost",
+        isp: "localhost",
+        continent: "localhost",
+        continentCode: "LH",
+        flag: null,
+        latitude: null,
+        longitude: null,
+      };
     }
-    const res = await fetch(`https://ipapi.co/${ip}/json/`);
-    const data = await res.json();
+
+    const geoRes = await fetch(`https://freeipapi.com/api/json/${ip}`);
+    const geo = await geoRes.json();
+
     return {
-      country: data.country_name || "unknown",
-      countryCode: data.country_code || "unknown",
-      city: data.city || "unknown",
-      region: data.region || "unknown",
-      timezone: data.timezone || "unknown",
-      org: data.org || "unknown",
-      postal: data.postal || "unknown",
-      latitude: data.latitude || null,
-      longitude: data.longitude || null,
+      ipSource: "freeipapi",
+      country: geo.countryName || "unknown",
+      countryCode: geo.countryCode || "unknown",
+      city: geo.cityName || "unknown",
+      region: geo.regionName || "unknown",
+      regionCode: geo.regionCode || "unknown",
+      timezone: geo.timeZone || "unknown",
+      isp: geo.isp || "unknown",
+      continent: geo.continent || "unknown",
+      continentCode: geo.continentCode || "unknown",
+      flag: geo.countryFlag || null,
+      latitude: geo.latitude || null,
+      longitude: geo.longitude || null,
     };
   } catch {
-    return { country: "unknown", countryCode: "unknown", city: "unknown", region: "unknown", timezone: "unknown", org: "unknown", postal: "unknown", latitude: null, longitude: null };
+    return {
+      ipSource: "unknown",
+      country: "unknown",
+      countryCode: "unknown",
+      city: "unknown",
+      region: "unknown",
+      regionCode: "unknown",
+      timezone: "unknown",
+      isp: "unknown",
+      continent: "unknown",
+      continentCode: "unknown",
+      flag: null,
+      latitude: null,
+      longitude: null,
+    };
   }
 };
 
-// --- helper: save or update access log ---
+// --- save or update access log ---
 const logAccess = async (ip, success) => {
   try {
     const existing = await AccessLog.findOne({ ip });
 
     if (existing) {
-      // same IP — just update counts and lastSeen
       existing.attempts += 1;
       existing.lastSeen = new Date();
       if (success) existing.successCount += 1;
       else existing.failCount += 1;
       await existing.save();
     } else {
-      // new IP — fetch geo and create record
       const geo = await getGeoInfo(ip);
       await AccessLog.create({
         ip,
@@ -72,7 +104,6 @@ const logAccess = async (ip, success) => {
       });
     }
   } catch (err) {
-    // never let logging break the login flow
     console.error("AccessLog error:", err.message);
   }
 };
